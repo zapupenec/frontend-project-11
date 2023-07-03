@@ -11,7 +11,7 @@ const genFilename = (ext) => (isDev ? `[name].${ext}` : `[name].[contenthash].${
 
 export default {
   mode: process.env.NODE_ENV,
-  entry: './src/index.js',
+  entry: ['@babel/polyfill', path.resolve(__dirname, 'src', 'index.js')],
   devtool: isDev ? 'source-map' : 'eval',
   output: {
     filename: genFilename('js'),
@@ -54,13 +54,19 @@ export default {
   ],
   module: {
     rules: [
-      // {
-      //   test: /\.css$/,
-      //   use: [MiniCssExtractPlugin.loader, 'css-loader', 'postcss-loader'],
-      // },
       {
         test: /\.(c|sa|sc)ss$/,
         use: [MiniCssExtractPlugin.loader, 'css-loader', 'sass-loader', 'postcss-loader'],
+      },
+      {
+        test: /\.js$/,
+        exclude: /node_modules/,
+        use: {
+          loader: 'babel-loader',
+          options: {
+            presets: ['@babel/preset-env'],
+          },
+        },
       },
     ],
   },
