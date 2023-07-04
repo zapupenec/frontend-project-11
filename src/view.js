@@ -8,7 +8,7 @@ const renderError = (elements, error) => {
   }
 
   elements.input.classList.add('is-invalid');
-  elements.feedbackEl.textContent = error.message;
+  elements.feedbackEl.textContent = error;
 };
 
 export default (elements, state) => (path, value) => {
