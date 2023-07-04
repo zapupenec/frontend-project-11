@@ -7,29 +7,30 @@ const __filename = url.fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const isDev = process.env.NODE_ENV === 'development';
-const genFilename = (ext) => (isDev ? `[name].${ext}` : `[name].[contenthash].${ext}`);
+// const genFilename = (ext) => (isDev ? `[name].${ext}` : `[name].[contenthash].${ext}`);
 
 export default {
   mode: process.env.NODE_ENV,
   entry: ['@babel/polyfill', path.resolve(__dirname, 'src', 'index.js')],
   devtool: isDev ? 'source-map' : 'eval',
   output: {
-    filename: genFilename('js'),
+    filename: 'index.js',
+    // filename: genFilename('js'),
     path: path.resolve(__dirname, 'dist'),
     clean: true,
   },
-  optimization: {
-    runtimeChunk: 'single',
-    splitChunks: {
-      cacheGroups: {
-        vendor: {
-          test: /[\\/]node_modules[\\/]/,
-          name: 'vendors',
-          chunks: 'all',
-        },
-      },
-    },
-  },
+  // optimization: {
+  //   runtimeChunk: 'single',
+  //   splitChunks: {
+  //     cacheGroups: {
+  //       vendor: {
+  //         test: /[\\/]node_modules[\\/]/,
+  //         name: 'vendors',
+  //         chunks: 'all',
+  //       },
+  //     },
+  //   },
+  // },
   devServer: {
     static: {
       directory: path.join(__dirname, 'dist'),
@@ -44,12 +45,14 @@ export default {
   },
   plugins: [
     new HtmlWebpackPlugin({
-      filename: genFilename('html'),
+      filename: 'index.html',
+      // filename: genFilename('html'),
       template: 'index.html',
       cache: true,
     }),
     new MiniCssExtractPlugin({
-      filename: genFilename('css'),
+      filename: 'styles.css',
+      // filename: genFilename('css'),
     }),
   ],
   module: {
