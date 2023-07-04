@@ -5,6 +5,7 @@ import _ from 'lodash';
 import i18n from 'i18next';
 import resources from './locales/index.js';
 
+import parser from './parser.js';
 import view from './view.js';
 
 const textState = i18n.createInstance();
@@ -25,17 +26,18 @@ const elements = {
 const initialState = {
   form: {
     state: 'filling', // sending, error, success
-    error: null,
     fields: {
       url: '',
     },
-    processError: null,
+    error: null,
   },
+  urls: [],
   posts: [],
-  feeds: ['https://ru.hexlet.io/lessons.rss'],
+  feeds: [],
 };
 
-const state = onChange(initialState, view(elements, initialState));
+const state = onChange(initialState, view(elements, initialState, textState));
+
 const validateUrl = (url, urls) => {
   yup.setLocale({
     string: {
@@ -49,8 +51,8 @@ const validateUrl = (url, urls) => {
   const schema = yup.string().url().notOneOf(urls);
 
   return schema.validate(url)
-    .then(() => null)
-    .catch((error) => textState.t(error.message));
+    .then(() => '')
+    .catch((error) => new Error(textState.t(error.message)));
 };
 
 export default () => {
@@ -62,9 +64,39 @@ export default () => {
 
   elements.form.addEventListener('submit', (e) => {
     e.preventDefault();
-    validateUrl(state.form.fields.url, state.feeds)
+    validateUrl(state.form.fields.url, state.urls)
       .then((error) => {
+        state.form.state = 'sending';
+
         state.form.error = error;
+        if (error) {
+          state.form.state = 'filling';
+          return;
+        }
+
+        const { url } = state.form.fields;
+        const proxyUrl = `https://allorigins.hexlet.app/get?disableCache=true&url=${encodeURIComponent(url)}`;
+
+        axios.get(proxyUrl)
+          .then((response) => {
+            try {
+              const { feed, posts } = parser(response.data.contents);
+              const feedId = _.uniqueId();
+              state.feeds.push({ feedId, ...feed });
+              state.posts = [...posts.map((post) => ({ feedId, postId: _.uniqueId(), ...post }))];
+
+              state.urls.push(url);
+              state.form.state = 'success';
+              state.form.error = null;
+              state.form.fields.url = '';
+            } catch (err) {
+              state.form.error = new Error(textState.t('err_invalidRss'));
+              state.form.state = 'filling';
+            }
+          })
+          .catch(() => {
+            state.form.error = new Error(textState.t('err_network'));
+          });
       });
   });
 };

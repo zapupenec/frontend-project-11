@@ -1,14 +1,14 @@
-develop:
-	NODE_ENV=development npx webpack serve
-
 install:
 	npm ci
 
-build:
-	NODE_ENV=production npx webpack
+lint:
+	npx eslint .
+
+develop:
+	NODE_ENV=development npx webpack serve
 
 build-dev:
 	NODE_ENV=development npx webpack
 
-lint:
-	npx eslint .
+build:
+	NODE_ENV=production npx webpack
