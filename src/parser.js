@@ -9,13 +9,13 @@ export default (xmlString) => {
   }
 
   const feed = {
-    title: doc.querySelector('channel title').textContent,
+    titleFeed: doc.querySelector('channel title').textContent,
     description: doc.querySelector('channel description').textContent,
   };
 
   const posts = [...doc.querySelectorAll('item')]
     .map((itemEl) => ({
-      title: itemEl.querySelector('title').textContent,
+      titlePost: itemEl.querySelector('title').textContent,
       link: itemEl.querySelector('link').textContent,
     }));
 

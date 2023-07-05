@@ -83,19 +83,19 @@ export default () => {
               const { feed, posts } = parser(response.data.contents);
               const feedId = _.uniqueId();
               state.feeds.push({ feedId, ...feed });
-              state.posts = [...posts.map((post) => ({ feedId, postId: _.uniqueId(), ...post }))];
-
+              state.posts.push(...posts.map((post) => ({ feedId, postId: _.uniqueId(), ...post })));
               state.urls.push(url);
               state.form.state = 'success';
-              state.form.error = null;
-              state.form.fields.url = '';
             } catch (err) {
               state.form.error = new Error(textState.t('err_invalidRss'));
               state.form.state = 'filling';
             }
+            state.form.error = null;
+            state.form.fields.url = '';
           })
           .catch(() => {
             state.form.error = new Error(textState.t('err_network'));
+            state.form.state = 'error';
           });
       });
   });
