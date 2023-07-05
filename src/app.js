@@ -38,6 +38,8 @@ const initialState = {
 
 const state = onChange(initialState, view(elements, initialState, textState));
 
+const proxy = (url) => `https://allorigins.hexlet.app/get?disableCache=true&url=${encodeURIComponent(url)}`;
+
 const validateUrl = (url, urls) => {
   yup.setLocale({
     string: {
@@ -45,10 +47,11 @@ const validateUrl = (url, urls) => {
     },
     mixed: {
       notOneOf: 'err_existRss',
+      required: 'err_emptyField',
     },
   });
 
-  const schema = yup.string().url().notOneOf(urls);
+  const schema = yup.string().required().url().notOneOf(urls);
 
   return schema.validate(url)
     .then(() => '')
@@ -75,27 +78,35 @@ export default () => {
         }
 
         const { url } = state.form.fields;
-        const proxyUrl = `https://allorigins.hexlet.app/get?disableCache=true&url=${encodeURIComponent(url)}`;
-
-        axios.get(proxyUrl)
+        axios.get(proxy(url))
           .then((response) => {
             try {
               const { feed, posts } = parser(response.data.contents);
               const feedId = _.uniqueId();
-              state.feeds.push({ feedId, ...feed });
-              state.posts.push(...posts.map((post) => ({ feedId, postId: _.uniqueId(), ...post })));
+              state.feeds.push({
+                feedId,
+                url,
+                ...feed,
+              });
+              state.posts.push(...posts.map((post) => ({
+                feedId,
+                isViewed: false,
+                postId: _.uniqueId(),
+                ...post,
+              })));
               state.urls.push(url);
               state.form.state = 'success';
             } catch (err) {
               state.form.error = new Error(textState.t('err_invalidRss'));
               state.form.state = 'filling';
+              // console.error(err);
             }
             state.form.error = null;
-            state.form.fields.url = '';
           })
           .catch(() => {
             state.form.error = new Error(textState.t('err_network'));
             state.form.state = 'error';
+            // console.error(err);
           });
       });
   });

@@ -1,3 +1,5 @@
+import _ from 'lodash';
+
 const handleProcessState = (elements, process) => {
   switch (process) {
     case 'filling':
@@ -63,15 +65,38 @@ const renderFeeds = (feeds) => {
   return itemElements;
 };
 
-const renderPosts = (textState, posts) => {
-  const itemElements = posts.map(({ titlePost, link, postId }) => {
+const renderPreview = (post) => {
+  const { titlePost, description, link } = post;
+  const modalTitle = document.querySelector('.modal-title');
+  modalTitle.textContent = titlePost;
+  const modalBody = document.querySelector('.modal-body');
+  modalBody.textContent = description;
+  const linkToFullArticle = document.querySelector('.full-article');
+  linkToFullArticle.setAttribute('href', `${link}`);
+};
+
+const renderPosts = (state, textState, posts) => {
+  const itemElements = posts.map(({
+    titlePost, link, postId, isViewed,
+  }) => {
     const linkEl = document.createElement('a');
     linkEl.setAttribute('href', `${link}`);
-    linkEl.className = 'fw-bold';
+    const v = isViewed ? 'fw-normal' : 'fw-bold';
+    linkEl.className = v;
     linkEl.setAttribute('data-id', `${postId}`);
     linkEl.setAttribute('target', '_blank');
     linkEl.setAttribute('rel', 'noopener noreferrer');
     linkEl.textContent = titlePost;
+    linkEl.addEventListener('click', (e) => {
+      const { id } = e.target.dataset;
+      const currentPost = state.posts.find((post) => post.postId === id);
+      state.posts = [...state.posts.map((post) => {
+        if (_.isEqual(post, currentPost)) {
+          return { ...post, isViewed: true };
+        }
+        return post;
+      })];
+    });
 
     const buttonEl = document.createElement('button');
     buttonEl.setAttribute('type', 'button');
@@ -80,6 +105,19 @@ const renderPosts = (textState, posts) => {
     buttonEl.setAttribute('data-bs-toggle', 'modal');
     buttonEl.setAttribute('data-bs-target', '#modal');
     buttonEl.textContent = textState.t('postButton');
+    buttonEl.addEventListener('click', (e) => {
+      const { id } = e.target.dataset;
+      const currentPost = state.posts.find((post) => post.postId === id);
+
+      state.posts = [...state.posts.map((post) => {
+        if (_.isEqual(post, currentPost)) {
+          return { ...post, isViewed: true };
+        }
+        return post;
+      })];
+
+      renderPreview(currentPost);
+    });
 
     const itemEl = document.createElement('li');
     itemEl.className = 'list-group-item d-flex justify-content-between align-items-start border-0 border-end-0';
@@ -90,7 +128,10 @@ const renderPosts = (textState, posts) => {
   return itemElements;
 };
 
-const renderCard = (elements, textState, items) => {
+const renderCard = (elements, state, textState, items) => {
+  if (items.length === 0) {
+    return;
+  }
   const isFeed = Object.hasOwn(items[0], 'titleFeed');
 
   const cardTitle = document.createElement('h2');
@@ -101,7 +142,7 @@ const renderCard = (elements, textState, items) => {
   cardBody.className = 'card-body';
   cardBody.append(cardTitle);
 
-  const itemElements = isFeed ? renderFeeds(items) : renderPosts(textState, items);
+  const itemElements = isFeed ? renderFeeds(items) : renderPosts(state, textState, items);
 
   const ulEl = document.createElement('ul');
   ulEl.classList.add('list-group', 'border-0', 'rounded-0');
@@ -125,8 +166,10 @@ export default (elements, state, textState) => (path, value) => {
       renderFeedback(elements, state, textState, value);
       break;
     case 'feeds':
+      renderCard(elements, state, textState, value);
+      break;
     case 'posts':
-      renderCard(elements, textState, value);
+      renderCard(elements, state, textState, value);
       break;
     default:
       break;
