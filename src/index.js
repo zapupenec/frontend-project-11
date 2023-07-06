@@ -1,3 +1,4 @@
+import '../index.html';
 import './styles.scss';
 import 'bootstrap';
 import i18n from 'i18next';
