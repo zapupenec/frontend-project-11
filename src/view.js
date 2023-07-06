@@ -1,5 +1,3 @@
-import _ from 'lodash';
-
 const handleProcessState = (elements, process) => {
   switch (process) {
     case 'filling':
@@ -65,8 +63,9 @@ const renderFeeds = (feeds) => {
   return itemElements;
 };
 
-const renderPreview = (post) => {
-  const { titlePost, description, link } = post;
+const renderPreview = (state, id) => {
+  const currentPost = state.posts.find((post) => post.postId === id);
+  const { titlePost, description, link } = currentPost;
   const modalTitle = document.querySelector('.modal-title');
   modalTitle.textContent = titlePost;
   const modalBody = document.querySelector('.modal-body');
@@ -86,10 +85,6 @@ const renderPosts = (state, textState, posts) => {
     linkEl.setAttribute('target', '_blank');
     linkEl.setAttribute('rel', 'noopener noreferrer');
     linkEl.textContent = titlePost;
-    linkEl.addEventListener('click', (e) => {
-      const { id } = e.target.dataset;
-      state.viewedPostsId.add(id);
-    });
 
     const buttonEl = document.createElement('button');
     buttonEl.setAttribute('type', 'button');
@@ -98,13 +93,6 @@ const renderPosts = (state, textState, posts) => {
     buttonEl.setAttribute('data-bs-toggle', 'modal');
     buttonEl.setAttribute('data-bs-target', '#modal');
     buttonEl.textContent = textState.t('postButton');
-    buttonEl.addEventListener('click', (e) => {
-      const { id } = e.target.dataset;
-      state.viewedPostsId.add(id);
-
-      const currentPost = state.posts.find((post) => post.postId === id);
-      renderPreview(currentPost);
-    });
 
     const itemEl = document.createElement('li');
     itemEl.className = 'list-group-item d-flex justify-content-between align-items-start border-0 border-end-0';
@@ -129,7 +117,7 @@ const renderCard = (elements, state, textState, items) => {
   cardBody.className = 'card-body';
   cardBody.append(cardTitle);
 
-  const itemElements = isFeed ? renderFeeds(items) : renderPosts(elements, state, textState, items);
+  const itemElements = isFeed ? renderFeeds(items) : renderPosts(state, textState, items);
 
   const ulEl = document.createElement('ul');
   ulEl.classList.add('list-group', 'border-0', 'rounded-0');
@@ -154,8 +142,13 @@ export default (elements, state, textState) => (path, value) => {
       break;
     case 'feeds':
     case 'posts':
-    case 'viewedPostsId':
       renderCard(elements, state, textState, value);
+      break;
+    case 'viewedPostsId':
+      renderCard(elements, state, textState, state.posts);
+      break;
+    case 'readablePostsId':
+      renderPreview(state, value);
       break;
     default:
       break;

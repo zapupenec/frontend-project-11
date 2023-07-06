@@ -1,10 +1,10 @@
 import axios from 'axios';
-import * as yup from 'yup';
+import { setLocale, string } from 'yup';
 import onChange from 'on-change';
-import _ from 'lodash';
+import { uniqueId } from 'lodash';
 import i18n from 'i18next';
-import resources from './locales/index.js';
 
+import resources from './locales/index.js';
 import parser from './parser.js';
 import view from './view.js';
 
@@ -33,6 +33,7 @@ const initialState = {
   },
   urls: [],
   posts: [],
+  readablePostsId: null,
   viewedPostsId: new Set(),
   feeds: [],
 };
@@ -42,7 +43,7 @@ const state = onChange(initialState, view(elements, initialState, textState));
 const proxy = (url) => `https://allorigins.hexlet.app/get?disableCache=true&url=${encodeURIComponent(url)}`;
 
 const validateUrl = (url, urls) => {
-  yup.setLocale({
+  setLocale({
     string: {
       url: 'err_invalidUrl',
     },
@@ -52,7 +53,7 @@ const validateUrl = (url, urls) => {
     },
   });
 
-  const schema = yup.string().required().url().notOneOf(urls);
+  const schema = string().required().url().notOneOf(urls);
 
   return schema.validate(url)
     .then(() => '')
@@ -83,7 +84,7 @@ export default () => {
           .then((response) => {
             try {
               const { feed, posts } = parser(response.data.contents);
-              const feedId = _.uniqueId();
+              const feedId = uniqueId();
               state.feeds.push({
                 feedId,
                 url,
@@ -91,11 +92,12 @@ export default () => {
               });
               state.posts.push(...posts.map((post) => ({
                 feedId,
-                postId: _.uniqueId(),
+                postId: uniqueId(),
                 ...post,
               })));
               state.urls.push(url);
               state.form.state = 'success';
+              state.form.fields.url = '';
             } catch (err) {
               state.form.error = new Error(textState.t('err_invalidRss'));
               state.form.state = 'filling';
@@ -109,5 +111,13 @@ export default () => {
             console.error(err);
           });
       });
+  });
+
+  elements.postsContainer.addEventListener('click', (e) => {
+    if (e.target.dataset.id) {
+      const { id } = e.target.dataset;
+      state.viewedPostsId.add(id);
+      state.readablePostsId = id;
+    }
   });
 };
