@@ -33,6 +33,7 @@ const initialState = {
   },
   urls: [],
   posts: [],
+  viewedPostsId: new Set(),
   feeds: [],
 };
 
@@ -90,7 +91,6 @@ export default () => {
               });
               state.posts.push(...posts.map((post) => ({
                 feedId,
-                isViewed: false,
                 postId: _.uniqueId(),
                 ...post,
               })));
@@ -99,14 +99,14 @@ export default () => {
             } catch (err) {
               state.form.error = new Error(textState.t('err_invalidRss'));
               state.form.state = 'filling';
-              // console.error(err);
+              console.error(err);
             }
             state.form.error = null;
           })
-          .catch(() => {
+          .catch((err) => {
             state.form.error = new Error(textState.t('err_network'));
             state.form.state = 'error';
-            // console.error(err);
+            console.error(err);
           });
       });
   });

@@ -77,25 +77,18 @@ const renderPreview = (post) => {
 
 const renderPosts = (state, textState, posts) => {
   const itemElements = posts.map(({
-    titlePost, link, postId, isViewed,
+    titlePost, link, postId,
   }) => {
     const linkEl = document.createElement('a');
     linkEl.setAttribute('href', `${link}`);
-    const v = isViewed ? 'fw-normal' : 'fw-bold';
-    linkEl.className = v;
+    linkEl.className = state.viewedPostsId.has(postId) ? 'fw-normal' : 'fw-bold';
     linkEl.setAttribute('data-id', `${postId}`);
     linkEl.setAttribute('target', '_blank');
     linkEl.setAttribute('rel', 'noopener noreferrer');
     linkEl.textContent = titlePost;
     linkEl.addEventListener('click', (e) => {
       const { id } = e.target.dataset;
-      const currentPost = state.posts.find((post) => post.postId === id);
-      state.posts = [...state.posts.map((post) => {
-        if (_.isEqual(post, currentPost)) {
-          return { ...post, isViewed: true };
-        }
-        return post;
-      })];
+      state.viewedPostsId.add(id);
     });
 
     const buttonEl = document.createElement('button');
@@ -107,15 +100,9 @@ const renderPosts = (state, textState, posts) => {
     buttonEl.textContent = textState.t('postButton');
     buttonEl.addEventListener('click', (e) => {
       const { id } = e.target.dataset;
+      state.viewedPostsId.add(id);
+
       const currentPost = state.posts.find((post) => post.postId === id);
-
-      state.posts = [...state.posts.map((post) => {
-        if (_.isEqual(post, currentPost)) {
-          return { ...post, isViewed: true };
-        }
-        return post;
-      })];
-
       renderPreview(currentPost);
     });
 
@@ -142,7 +129,7 @@ const renderCard = (elements, state, textState, items) => {
   cardBody.className = 'card-body';
   cardBody.append(cardTitle);
 
-  const itemElements = isFeed ? renderFeeds(items) : renderPosts(state, textState, items);
+  const itemElements = isFeed ? renderFeeds(items) : renderPosts(elements, state, textState, items);
 
   const ulEl = document.createElement('ul');
   ulEl.classList.add('list-group', 'border-0', 'rounded-0');
@@ -166,9 +153,8 @@ export default (elements, state, textState) => (path, value) => {
       renderFeedback(elements, state, textState, value);
       break;
     case 'feeds':
-      renderCard(elements, state, textState, value);
-      break;
     case 'posts':
+    case 'viewedPostsId':
       renderCard(elements, state, textState, value);
       break;
     default:
