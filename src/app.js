@@ -1,48 +1,14 @@
 import axios from 'axios';
 import { setLocale, string } from 'yup';
 import onChange from 'on-change';
-import { uniqueId } from 'lodash';
-import i18n from 'i18next';
+import { isEqual, uniqueId } from 'lodash';
 
-import resources from './locales/index.js';
 import parser from './parser.js';
 import view from './view.js';
 
-const textState = i18n.createInstance();
-await textState.init({
-  lng: 'ru',
-  resources,
-});
-
-const elements = {
-  form: document.querySelector('.rss-form'),
-  input: document.querySelector('[type=url-input]'),
-  submit: document.querySelector('[aria-label=add]'),
-  feedbackEl: document.querySelector('.feedback'),
-  postsContainer: document.querySelector('.posts'),
-  feedsContainer: document.querySelector('.feeds'),
-};
-
-const initialState = {
-  form: {
-    state: 'filling', // sending, error, success
-    fields: {
-      url: '',
-    },
-    error: null,
-  },
-  urls: [],
-  posts: [],
-  readablePostsId: null,
-  viewedPostsId: new Set(),
-  feeds: [],
-};
-
-const state = onChange(initialState, view(elements, initialState, textState));
-
 const proxy = (url) => `https://allorigins.hexlet.app/get?disableCache=true&url=${encodeURIComponent(url)}`;
 
-const validateUrl = (url, urls) => {
+const validateUrl = (url, urls, textState) => {
   setLocale({
     string: {
       url: 'err_invalidUrl',
@@ -60,7 +26,56 @@ const validateUrl = (url, urls) => {
     .catch((error) => new Error(textState.t(error.message)));
 };
 
-export default () => {
+const updatePosts = (state) => {
+  const promises = state.urls.map((currentUrl) => axios.get(proxy(currentUrl))
+    .then((response) => {
+      const { posts } = parser(response.data.contents);
+      const { feedId } = state.feeds.find(({ url }) => url === currentUrl);
+      const filteredPosts = posts
+        .filter((currentPost) => state.posts.some((post) => isEqual(post, currentPost)));
+      state.posts.push(...filteredPosts.map((post) => ({
+        feedId,
+        postId: uniqueId(),
+        ...post,
+      })));
+    })
+    .catch((err) => {
+      console.error(err);
+    }));
+
+  Promise.all(promises)
+    .then(() => {
+      setTimeout(() => updatePosts(state), 5000);
+    });
+};
+
+export default (textState) => {
+  const elements = {
+    form: document.querySelector('.rss-form'),
+    input: document.querySelector('[type=url-input]'),
+    submit: document.querySelector('[aria-label=add]'),
+    feedbackEl: document.querySelector('.feedback'),
+    postsContainer: document.querySelector('.posts'),
+    feedsContainer: document.querySelector('.feeds'),
+  };
+
+  const initialState = {
+    form: {
+      state: 'filling', // sending, error, success
+      fields: {
+        url: '',
+      },
+      error: null,
+    },
+    urls: [],
+    feeds: [],
+    posts: [],
+    readablePostsId: null,
+    viewedPostsId: new Set(),
+  };
+
+  const state = onChange(initialState, view(elements, initialState, textState));
+
   elements.input.addEventListener('input', (e) => {
     e.preventDefault();
     const { value } = e.target;
@@ -69,7 +84,7 @@ export default () => {
 
   elements.form.addEventListener('submit', (e) => {
     e.preventDefault();
-    validateUrl(state.form.fields.url, state.urls)
+    validateUrl(state.form.fields.url, state.urls, textState)
       .then((error) => {
         state.form.state = 'sending';
 
@@ -120,4 +135,6 @@ export default () => {
       state.readablePostsId = id;
     }
   });
+
+  updatePosts(state);
 };
