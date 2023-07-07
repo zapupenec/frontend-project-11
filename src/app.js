@@ -2,139 +2,149 @@ import axios from 'axios';
 import { setLocale, string } from 'yup';
 import onChange from 'on-change';
 import { isEqual, uniqueId } from 'lodash';
+import i18n from 'i18next';
 
+import resources from './locales/index.js';
 import parser from './parser.js';
 import view from './view.js';
 
-const proxy = (url) => `https://allorigins.hexlet.app/get?disableCache=true&url=${encodeURIComponent(url)}`;
+const proxifyUrl = (url) => {
+  const newUrl = new URL('https://allorigins.hexlet.app');
+  newUrl.pathname = '/get';
+  newUrl.searchParams.set('disableCache', 'true');
+  newUrl.searchParams.set('url', url);
+  return newUrl;
+};
 
-const validateUrl = (url, urls, textState) => {
-  setLocale({
-    string: {
-      url: 'err_invalidUrl',
-    },
-    mixed: {
-      notOneOf: 'err_existRss',
-      required: 'err_emptyField',
-    },
-  });
+setLocale({
+  string: {
+    url: 'err_invalidUrl',
+  },
+  mixed: {
+    notOneOf: 'err_existRss',
+    required: 'err_emptyField',
+  },
+});
 
+const validateUrl = (url, urls) => {
   const schema = string().required().url().notOneOf(urls);
 
   return schema.validate(url)
     .then(() => '')
-    .catch((error) => new Error(textState.t(error.message)));
+    .catch((error) => error.message);
 };
 
 const updatePosts = (state) => {
-  const promises = state.urls.map((currentUrl) => axios.get(proxy(currentUrl))
-    .then((response) => {
-      const { posts } = parser(response.data.contents);
-      const { feedId } = state.feeds.find(({ url }) => url === currentUrl);
-      const filteredPosts = posts
-        .filter((currentPost) => state.posts.some((post) => isEqual(post, currentPost)));
-      state.posts.push(...filteredPosts.map((post) => ({
-        feedId,
-        postId: uniqueId(),
-        ...post,
-      })));
-    })
-    .catch((err) => {
-      console.error(err);
-    }));
+  const promises = state
+    .feeds.map(({ url }) => url)
+    .map((currentUrl) => axios.get(proxifyUrl(currentUrl))
+      .then((response) => {
+        const { posts } = parser(response.data.contents);
+        const { feedId } = state.feeds.find(({ url }) => url === currentUrl);
+        const filteredPosts = posts
+          .filter((currentPost) => state.posts.some((post) => isEqual(post, currentPost)));
+        state.posts.push(...filteredPosts.map((post) => ({
+          feedId,
+          postId: uniqueId(),
+          ...post,
+        })));
+      })
+      .catch((err) => {
+        console.error(err);
+      }));
 
   Promise.all(promises)
     .then(() => {
       setTimeout(() => updatePosts(state), 5000);
+    })
+    .catch(() => {
+      setTimeout(() => updatePosts(state), 5000);
     });
 };
 
-export default (textState) => {
-  const elements = {
-    form: document.querySelector('.rss-form'),
-    input: document.querySelector('[type=url-input]'),
-    submit: document.querySelector('[aria-label=add]'),
-    feedbackEl: document.querySelector('.feedback'),
-    postsContainer: document.querySelector('.posts'),
-    feedsContainer: document.querySelector('.feeds'),
-  };
+export default () => {
+  const textState = i18n.createInstance();
+  textState.init({
+    lng: 'ru',
+    resources,
+  })
+    .then(() => {
+      const elements = {
+        form: document.querySelector('.rss-form'),
+        input: document.querySelector('[type=url-input]'),
+        submit: document.querySelector('[aria-label=add]'),
+        feedbackEl: document.querySelector('.feedback'),
+        postsContainer: document.querySelector('.posts'),
+        feedsContainer: document.querySelector('.feeds'),
+      };
 
-  const initialState = {
-    form: {
-      state: 'filling', // sending, error, success
-      fields: {
-        url: '',
-      },
-      error: null,
-    },
-    urls: [],
-    feeds: [],
-    posts: [],
-    readablePostsId: null,
-    viewedPostsId: new Set(),
-  };
+      const initialState = {
+        form: {
+          state: 'filling', // sending, error, success
+          error: null,
+        },
+        feeds: [],
+        posts: [],
+        readablePostsId: null,
+        viewedPostsId: new Set(),
+      };
 
-  const state = onChange(initialState, view(elements, initialState, textState));
+      const state = onChange(initialState, view(elements, initialState, textState));
 
-  elements.input.addEventListener('input', (e) => {
-    e.preventDefault();
-    const { value } = e.target;
-    state.form.fields.url = value.trim();
-  });
+      elements.form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const existUrls = state.feeds.map(({ url }) => url);
+        const formData = new FormData(elements.form);
+        const url = formData.get('url').trim();
+        state.form.error = null;
 
-  elements.form.addEventListener('submit', (e) => {
-    e.preventDefault();
-    validateUrl(state.form.fields.url, state.urls, textState)
-      .then((error) => {
-        state.form.state = 'sending';
+        validateUrl(url, existUrls)
+          .then((error) => {
+            state.form.state = 'sending';
 
-        state.form.error = error;
-        if (error) {
-          state.form.state = 'filling';
-          return;
-        }
-
-        const { url } = state.form.fields;
-        axios.get(proxy(url))
-          .then((response) => {
-            try {
-              const { feed, posts } = parser(response.data.contents);
-              const feedId = uniqueId();
-              state.feeds.push({
-                feedId,
-                url,
-                ...feed,
-              });
-              state.posts.push(...posts.map((post) => ({
-                feedId,
-                postId: uniqueId(),
-                ...post,
-              })));
-              state.urls.push(url);
-              state.form.state = 'success';
-              state.form.fields.url = '';
-            } catch (err) {
-              state.form.error = new Error(textState.t('err_invalidRss'));
+            state.form.error = error;
+            if (error) {
               state.form.state = 'filling';
-              console.error(err);
+              return;
             }
-            state.form.error = null;
-          })
-          .catch((err) => {
-            state.form.error = new Error(textState.t('err_network'));
-            state.form.state = 'error';
-            console.error(err);
+
+            axios.get(proxifyUrl(url))
+              .then((response) => {
+                const { feed, posts } = parser(response.data.contents);
+                const feedId = uniqueId();
+                state.feeds.push({
+                  feedId,
+                  url,
+                  ...feed,
+                });
+                state.posts.push(...posts.map((post) => ({
+                  feedId,
+                  postId: uniqueId(),
+                  ...post,
+                })));
+                state.form.state = 'success';
+                state.form.error = null;
+              })
+              .catch((err) => {
+                if (error.response) {
+                  state.form.error = 'err_network';
+                } else {
+                  state.form.error = 'err_invalidRss';
+                }
+                console.error(err);
+                state.form.state = 'filling';
+              });
           });
       });
-  });
 
-  elements.postsContainer.addEventListener('click', (e) => {
-    if (e.target.dataset.id) {
-      const { id } = e.target.dataset;
-      state.viewedPostsId.add(id);
-      state.readablePostsId = id;
-    }
-  });
+      elements.postsContainer.addEventListener('click', (e) => {
+        if (e.target.dataset.id) {
+          const { id } = e.target.dataset;
+          state.viewedPostsId.add(id);
+          state.readablePostsId = id;
+        }
+      });
 
-  updatePosts(state);
+      updatePosts(state);
+    });
 };

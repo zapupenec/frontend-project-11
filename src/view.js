@@ -10,11 +10,6 @@ const handleProcessState = (elements, process) => {
       elements.input.disabled = true;
       break;
 
-    case 'error':
-      elements.input.disabled = false;
-      elements.submit.disabled = false;
-      break;
-
     case 'success':
       elements.input.disabled = false;
       elements.submit.disabled = false;
@@ -35,12 +30,14 @@ const renderFeedback = (elements, state, textState, error) => {
     elements.feedbackEl.textContent = textState.t('successMessage');
   } else {
     if (!error) {
+      elements.input.classList.remove('is-invalid');
+      elements.feedbackEl.textContent = '';
       return;
     }
     elements.input.classList.add('is-invalid');
     elements.feedbackEl.classList.remove('text-success');
     elements.feedbackEl.classList.add('text-danger');
-    elements.feedbackEl.textContent = error.message;
+    elements.feedbackEl.textContent = textState.t(error);
   }
 };
 
