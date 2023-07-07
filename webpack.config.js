@@ -1,28 +1,28 @@
 import HtmlWebpackPlugin from 'html-webpack-plugin';
 import MiniCssExtractPlugin from 'mini-css-extract-plugin';
-import url from 'url';
-import path from 'path';
+// import url from 'url';
+// import path from 'path';
 
-const __filename = url.fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+// const __filename = url.fileURLToPath(import.meta.url);
+// const __dirname = path.dirname(__filename);
 
-const isDev = process.env.NODE_ENV === 'development';
+const currentMode = process.env.NODE_ENV === 'production' ? 'production' : 'development';
+const isDev = currentMode === 'development';
 const genFilename = (ext) => (isDev ? `[name].${ext}` : `[name].[contenthash].${ext}`);
 
 export default {
-  mode: process.env.NODE_ENV,
-  entry: ['@babel/polyfill', path.resolve(__dirname, 'src', 'index.js')],
+  mode: currentMode,
+  // entry: ['@babel/polyfill', path.resolve(__dirname, 'src', 'index.js')],
   devtool: isDev ? 'source-map' : 'eval',
   output: {
-    // filename: 'index.js',
     filename: genFilename('js'),
-    path: path.resolve(__dirname, 'dist'),
+    // path: path.resolve(__dirname, 'dist'),
     clean: true,
   },
   devServer: {
-    static: {
-      directory: path.join(__dirname, 'dist'),
-    },
+    // static: {
+    //   // directory: path.join(__dirname, 'dist'),
+    // },
     hot: isDev,
   },
   plugins: [
@@ -32,7 +32,6 @@ export default {
       cache: true,
     }),
     new MiniCssExtractPlugin({
-      // filename: 'styles.css',
       filename: genFilename('css'),
     }),
   ],
@@ -57,5 +56,8 @@ export default {
         loader: 'html-loader',
       },
     ],
+  },
+  performance: {
+    hints: false,
   },
 };
