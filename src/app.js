@@ -126,7 +126,7 @@ export default () => {
                 state.form.error = null;
               })
               .catch((err) => {
-                if (error.response) {
+                if (err.isAxiosError) {
                   state.form.error = 'err_network';
                 } else {
                   state.form.error = 'err_invalidRss';
