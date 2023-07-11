@@ -1,6 +1,6 @@
 const handleProcessState = (elements, process) => {
   switch (process) {
-    case 'filling':
+    case 'waiting':
       elements.input.disabled = false;
       elements.submit.disabled = false;
       break;

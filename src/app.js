@@ -35,11 +35,12 @@ const validateUrl = (url, urls) => {
 };
 
 const updatePosts = (state) => {
-  const promises = state
-    .feeds.map(({ url }) => url)
-    .map((currentUrl) => axios.get(proxifyUrl(currentUrl))
+  const getRequests = state.feeds.map(({ url }) => {
+    const currentUrl = url;
+    return axios.get(proxifyUrl(currentUrl))
       .then((response) => {
         const { posts } = parser(response.data.contents);
+        // eslint-disable-next-line no-shadow
         const { feedId } = state.feeds.find(({ url }) => url === currentUrl);
         const filteredPosts = posts
           .filter((currentPost) => state.posts.some((post) => isEqual(post, currentPost)));
@@ -51,13 +52,11 @@ const updatePosts = (state) => {
       })
       .catch((err) => {
         console.error(err);
-      }));
+      });
+  });
 
-  Promise.all(promises)
-    .then(() => {
-      setTimeout(() => updatePosts(state), 5000);
-    })
-    .catch(() => {
+  Promise.all(getRequests)
+    .finally(() => {
       setTimeout(() => updatePosts(state), 5000);
     });
 };
@@ -80,8 +79,9 @@ export default () => {
 
       const initialState = {
         form: {
-          state: 'filling', // sending, error, success
+          state: 'waiting',
           error: null,
+          processError: null,
         },
         feeds: [],
         posts: [],
@@ -102,9 +102,9 @@ export default () => {
           .then((error) => {
             state.form.state = 'sending';
 
-            state.form.error = error;
             if (error) {
-              state.form.state = 'filling';
+              state.form.state = 'waiting';
+              state.form.error = error;
               return;
             }
 
@@ -132,7 +132,7 @@ export default () => {
                   state.form.error = 'err_invalidRss';
                 }
                 console.error(err);
-                state.form.state = 'filling';
+                state.form.state = 'waiting';
               });
           });
       });
