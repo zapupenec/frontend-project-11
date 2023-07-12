@@ -1,6 +1,5 @@
 import axios from 'axios';
 import { setLocale, string } from 'yup';
-import onChange from 'on-change';
 import { isEqual, uniqueId } from 'lodash';
 import i18n from 'i18next';
 
@@ -31,7 +30,7 @@ const validateUrl = (url, urls) => {
 
   return schema.validate(url)
     .then(() => '')
-    .catch((error) => error.message);
+    .catch((error) => error);
 };
 
 const updatePosts = (state) => {
@@ -81,7 +80,6 @@ export default () => {
         form: {
           state: 'waiting',
           error: null,
-          processError: null,
         },
         feeds: [],
         posts: [],
@@ -89,22 +87,21 @@ export default () => {
         viewedPostsId: new Set(),
       };
 
-      const state = onChange(initialState, view(elements, initialState, textState));
+      const watchedState = view(elements, initialState, textState);
 
       elements.form.addEventListener('submit', (e) => {
         e.preventDefault();
-        const existUrls = state.feeds.map(({ url }) => url);
+        const existUrls = watchedState.feeds.map(({ url }) => url);
         const formData = new FormData(elements.form);
         const url = formData.get('url').trim();
-        state.form.error = null;
+        watchedState.form.error = null;
 
         validateUrl(url, existUrls)
-          .then((error) => {
-            state.form.state = 'sending';
-
-            if (error) {
-              state.form.state = 'waiting';
-              state.form.error = error;
+          .then((validationError) => {
+            watchedState.form.state = 'sending';
+            watchedState.form.error = validationError;
+            if (validationError) {
+              watchedState.form.state = 'waiting';
               return;
             }
 
@@ -112,27 +109,27 @@ export default () => {
               .then((response) => {
                 const { feed, posts } = parser(response.data.contents);
                 const feedId = uniqueId();
-                state.feeds.push({
+                watchedState.feeds.push({
                   feedId,
                   url,
                   ...feed,
                 });
-                state.posts.push(...posts.map((post) => ({
+                watchedState.posts.push(...posts.map((post) => ({
                   feedId,
                   postId: uniqueId(),
                   ...post,
                 })));
-                state.form.state = 'success';
-                state.form.error = null;
+                watchedState.form.state = 'success';
+                watchedState.form.error = null;
               })
               .catch((err) => {
                 if (err.isAxiosError) {
-                  state.form.error = 'err_network';
+                  watchedState.form.error = new Error('err_network');
                 } else {
-                  state.form.error = 'err_invalidRss';
+                  watchedState.form.error = new Error('err_invalidRss');
                 }
                 console.error(err);
-                state.form.state = 'waiting';
+                watchedState.form.state = 'waiting';
               });
           });
       });
@@ -140,11 +137,11 @@ export default () => {
       elements.postsContainer.addEventListener('click', (e) => {
         if (e.target.dataset.id) {
           const { id } = e.target.dataset;
-          state.viewedPostsId.add(id);
-          state.readablePostsId = id;
+          watchedState.viewedPostsId.add(id);
+          watchedState.readablePostsId = id;
         }
       });
 
-      updatePosts(state);
+      updatePosts(watchedState);
     });
 };

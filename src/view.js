@@ -1,3 +1,5 @@
+import onChange from 'on-change';
+
 const handleProcessState = (elements, process) => {
   switch (process) {
     case 'waiting':
@@ -37,7 +39,7 @@ const renderFeedback = (elements, state, textState, error) => {
     elements.input.classList.add('is-invalid');
     elements.feedbackEl.classList.remove('text-success');
     elements.feedbackEl.classList.add('text-danger');
-    elements.feedbackEl.textContent = textState.t(error);
+    elements.feedbackEl.textContent = textState.t(error.message);
   }
 };
 
@@ -129,25 +131,29 @@ const renderCard = (elements, state, textState, items) => {
   container.append(card);
 };
 
-export default (elements, state, textState) => (path, value) => {
-  switch (path) {
-    case 'form.state':
-      handleProcessState(elements, value);
-      break;
-    case 'form.error':
-      renderFeedback(elements, state, textState, value);
-      break;
-    case 'feeds':
-    case 'posts':
-      renderCard(elements, state, textState, value);
-      break;
-    case 'viewedPostsId':
-      renderCard(elements, state, textState, state.posts);
-      break;
-    case 'readablePostsId':
-      renderPreview(state, value);
-      break;
-    default:
-      break;
-  }
+export default (elements, initialState, textState) => {
+  const state = onChange(initialState, (path, value) => {
+    switch (path) {
+      case 'form.state':
+        handleProcessState(elements, value);
+        break;
+      case 'form.error':
+        renderFeedback(elements, state, textState, value);
+        break;
+      case 'feeds':
+      case 'posts':
+        renderCard(elements, state, textState, value);
+        break;
+      case 'viewedPostsId':
+        renderCard(elements, state, textState, state.posts);
+        break;
+      case 'readablePostsId':
+        renderPreview(state, value);
+        break;
+      default:
+        break;
+    }
+  });
+
+  return state;
 };
