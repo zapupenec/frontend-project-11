@@ -1,3 +1,5 @@
 import ru from './ru.js';
+import locale from './locale.js';
 
-export default { ru };
+const resources = { ru };
+export { locale, resources };

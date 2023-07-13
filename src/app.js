@@ -3,7 +3,7 @@ import { setLocale, string } from 'yup';
 import { isEqual, uniqueId } from 'lodash';
 import i18n from 'i18next';
 
-import resources from './locales/index.js';
+import { locale, resources } from './locales/index.js';
 import parser from './parser.js';
 import view from './view.js';
 
@@ -52,15 +52,7 @@ const updatePosts = (state) => {
 };
 
 export default () => {
-  setLocale({
-    string: {
-      url: 'err_invalidUrl',
-    },
-    mixed: {
-      notOneOf: 'err_existRss',
-      required: 'err_emptyField',
-    },
-  });
+  setLocale(locale);
 
   const defaultLang = 'ru';
   const textState = i18n.createInstance();
@@ -123,15 +115,15 @@ export default () => {
                   ...post,
                 })));
                 watchedState.form.processState = 'success';
-                // watchedState.form.error = null;
               })
-              .catch((err) => {
-                if (err.isAxiosError) {
+              .catch((error) => {
+                if (error.isAxiosError) {
                   watchedState.form.error = new Error('err_network');
-                } else {
+                }
+                if (error.isParserError) {
                   watchedState.form.error = new Error('err_invalidRss');
                 }
-                console.error(err);
+                console.error(error);
                 watchedState.form.processState = 'error';
               });
           });

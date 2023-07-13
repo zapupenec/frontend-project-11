@@ -3,8 +3,9 @@ export default (xmlString) => {
   const doc = parser.parseFromString(xmlString, 'application/xml');
   const nodeError = doc.querySelector('parsererror');
   if (nodeError) {
-    const parserError = nodeError.textContent;
-    throw new Error(parserError);
+    const error = new Error(nodeError.textContent);
+    error.isParserError = true;
+    throw error;
   }
 
   const feed = {
