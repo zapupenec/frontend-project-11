@@ -15,16 +15,6 @@ const proxifyUrl = (url) => {
   return newUrl;
 };
 
-setLocale({
-  string: {
-    url: 'err_invalidUrl',
-  },
-  mixed: {
-    notOneOf: 'err_existRss',
-    required: 'err_emptyField',
-  },
-});
-
 const validateUrl = (url, urls) => {
   const schema = string().required().url().notOneOf(urls);
 
@@ -34,25 +24,26 @@ const validateUrl = (url, urls) => {
 };
 
 const updatePosts = (state) => {
-  const getRequests = state.feeds.map(({ url }) => {
-    const currentUrl = url;
-    return axios.get(proxifyUrl(currentUrl))
-      .then((response) => {
-        const { posts } = parser(response.data.contents);
-        // eslint-disable-next-line no-shadow
-        const { feedId } = state.feeds.find(({ url }) => url === currentUrl);
-        const filteredPosts = posts
-          .filter((currentPost) => state.posts.some((post) => isEqual(post, currentPost)));
-        state.posts.push(...filteredPosts.map((post) => ({
+  const urls = state.feeds.map(({ url }) => url);
+  const postLinks = state.posts.map(({ link }) => link);
+
+  const getRequests = urls.map((currentUrl) => axios.get(proxifyUrl(currentUrl))
+    .then((response) => {
+      const { posts } = parser(response.data.contents);
+      const { feedId } = urls.find((url) => url === currentUrl);
+
+      const newPosts = posts
+        .filter(({ link }) => !postLinks.some((currentLink) => isEqual(currentLink, link)))
+        .map((post) => ({
           feedId,
           postId: uniqueId(),
           ...post,
-        })));
-      })
-      .catch((err) => {
-        console.error(err);
-      });
-  });
+        }));
+      state.posts.push(...newPosts);
+    })
+    .catch((err) => {
+      console.error(err);
+    }));
 
   Promise.all(getRequests)
     .finally(() => {
@@ -61,9 +52,20 @@ const updatePosts = (state) => {
 };
 
 export default () => {
+  setLocale({
+    string: {
+      url: 'err_invalidUrl',
+    },
+    mixed: {
+      notOneOf: 'err_existRss',
+      required: 'err_emptyField',
+    },
+  });
+
+  const defaultLang = 'ru';
   const textState = i18n.createInstance();
   textState.init({
-    lng: 'ru',
+    lng: defaultLang,
     resources,
   })
     .then(() => {

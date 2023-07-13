@@ -1,5 +1,8 @@
 export default {
   translation: {
+    languages: {
+      ru: 'Русский',
+    },
     feeds: 'Фиды',
     posts: 'Посты',
     postButton: 'Просмотр',
