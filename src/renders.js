@@ -1,20 +1,36 @@
+const renderErrors = (elements, textState, error) => {
+  elements.input.classList.add('is-invalid');
+  elements.feedbackEl.classList.remove('text-success');
+  elements.feedbackEl.classList.add('text-danger');
+  elements.feedbackEl.textContent = textState.t(error.message);
+};
+
+const renderSuccessMessage = (elements, textState) => {
+  elements.input.classList.remove('is-invalid');
+  elements.feedbackEl.classList.remove('text-danger');
+  elements.feedbackEl.classList.add('text-success');
+  elements.feedbackEl.textContent = textState.t('successMessage');
+};
+
+const clearFeedback = (elements) => {
+  elements.input.classList.remove('is-invalid');
+  elements.input.classList.remove('is-valid');
+
+  elements.feedbackEl.classList.remove('text-danger');
+  elements.feedbackEl.classList.remove('text-success');
+  elements.feedbackEl.textContent = '';
+};
+
 export const renderFeedback = (elements, state, textState, error) => {
-  if (state.form.state === 'success') {
-    elements.input.classList.remove('is-invalid');
-    elements.feedbackEl.classList.remove('text-danger');
-    elements.feedbackEl.classList.add('text-success');
-    elements.feedbackEl.textContent = textState.t('successMessage');
-  } else {
-    if (!error) {
-      elements.input.classList.remove('is-invalid');
-      elements.feedbackEl.textContent = '';
-      return;
-    }
-    elements.input.classList.add('is-invalid');
-    elements.feedbackEl.classList.remove('text-success');
-    elements.feedbackEl.classList.add('text-danger');
-    elements.feedbackEl.textContent = textState.t(error.message);
+  if (state.form.processState === 'sending') {
+    clearFeedback(elements);
+    return;
   }
+  if (!error) {
+    renderSuccessMessage(elements, textState);
+    return;
+  }
+  renderErrors(elements, textState, error);
 };
 
 const renderFeeds = (feeds) => {

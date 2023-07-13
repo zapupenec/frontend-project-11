@@ -1,39 +1,44 @@
 import onChange from 'on-change';
 
-import { renderCard, renderFeedback, renderPreview } from './renders.js';
+import {
+  renderCard,
+  renderFeedback,
+  renderPreview,
+} from './renders.js';
 
-const handleProcessState = (elements, procesState) => {
-  switch (procesState) {
-    case 'waiting':
-      elements.input.disabled = false;
-      elements.submit.disabled = false;
-      break;
-
-    case 'sending':
-      elements.submit.disabled = true;
-      elements.input.disabled = true;
-      break;
-
-    case 'success':
-      elements.input.disabled = false;
-      elements.submit.disabled = false;
-      elements.form.reset();
-      elements.input.focus();
-      break;
-
-    default:
-      throw new Error(`Unknown process ${process}`);
-  }
-};
-
-export default (elements, initialState, textState) => {
-  const state = onChange(initialState, (path, value) => {
-    switch (path) {
-      case 'form.procesState':
-        handleProcessState(elements, value);
+export default (elements, state, textState) => {
+  const handleProcessState = (processState) => {
+    switch (processState) {
+      case 'error':
+        renderFeedback(elements, state, textState, state.form.error);
+        elements.input.disabled = false;
+        elements.submit.disabled = false;
+        elements.input.focus();
         break;
-      case 'form.error':
-        renderFeedback(elements, state, textState, value);
+
+      case 'sending':
+        renderFeedback(elements, state, textState, state.form.error);
+        elements.submit.disabled = true;
+        elements.input.disabled = true;
+        break;
+
+      case 'success':
+        renderFeedback(elements, state, textState, state.form.error);
+        elements.input.disabled = false;
+        elements.submit.disabled = false;
+        elements.form.reset();
+        elements.input.focus();
+        break;
+
+      default:
+        throw new Error(`Unknown process ${process}`);
+    }
+  };
+
+  const watchedState = onChange(state, (path, value) => {
+    switch (path) {
+      case 'form.processState':
+        handleProcessState(value);
         break;
       case 'feeds':
       case 'posts':
@@ -50,5 +55,5 @@ export default (elements, initialState, textState) => {
     }
   });
 
-  return state;
+  return watchedState;
 };

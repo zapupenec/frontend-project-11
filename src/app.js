@@ -80,7 +80,7 @@ export default () => {
 
       const initialState = {
         form: {
-          state: 'waiting',
+          processState: null,
           error: null,
         },
         feeds: [],
@@ -100,10 +100,11 @@ export default () => {
 
         validateUrl(url, existUrls)
           .then((validationError) => {
-            watchedState.form.state = 'sending';
-            watchedState.form.error = validationError;
+            watchedState.form.processState = 'sending';
+
             if (validationError) {
-              watchedState.form.state = 'waiting';
+              watchedState.form.error = validationError;
+              watchedState.form.processState = 'error';
               return;
             }
 
@@ -121,8 +122,8 @@ export default () => {
                   postId: uniqueId(),
                   ...post,
                 })));
-                watchedState.form.state = 'success';
-                watchedState.form.error = null;
+                watchedState.form.processState = 'success';
+                // watchedState.form.error = null;
               })
               .catch((err) => {
                 if (err.isAxiosError) {
@@ -131,7 +132,7 @@ export default () => {
                   watchedState.form.error = new Error('err_invalidRss');
                 }
                 console.error(err);
-                watchedState.form.state = 'waiting';
+                watchedState.form.processState = 'error';
               });
           });
       });
