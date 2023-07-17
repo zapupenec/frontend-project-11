@@ -11,14 +11,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/zapupenec/frontend-project-11.git"
+    "url": "git+https://github.com/zapupenec/rss-reader.git"
   },
   "author": "zapupenec",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/zapupenec/frontend-project-11/issues"
+    "url": "https://github.com/zapupenec/rss-reader/issues"
   },
-  "homepage": "https://github.com/zapupenec/frontend-project-11#readme",
+  "homepage": "https://github.com/zapupenec/rss-reader#readme",
   "devDependencies": {
     "@babel/core": "^7.22.5",
     "@babel/preset-env": "^7.22.5",

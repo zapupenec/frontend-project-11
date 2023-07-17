@@ -1,10 +1,10 @@
-[![Actions Status](https://github.com/zapupenec/frontend-project-11/workflows/hexlet-check/badge.svg)](https://github.com/zapupenec/frontend-project-11/actions)
-[![CI](https://github.com/zapupenec/frontend-project-11/actions/workflows/mainCI.yml/badge.svg)](https://github.com/zapupenec/frontend-project-11/actions/workflows/mainCI.yml)
-[![Maintainability](https://api.codeclimate.com/v1/badges/893498d46128da2a4789/maintainability)](https://codeclimate.com/github/zapupenec/frontend-project-11/maintainability)
+[![Actions Status](https://github.com/zapupenec/rss-reader/workflows/hexlet-check/badge.svg)](https://github.com/zapupenec/rss-reader/actions)
+[![CI](https://github.com/zapupenec/rss-reader/actions/workflows/mainCI.yml/badge.svg)](https://github.com/zapupenec/rss-reader/actions/workflows/mainCI.yml)
+[![Maintainability](https://api.codeclimate.com/v1/badges/c74e3bd339f1957949ff/maintainability)](https://codeclimate.com/github/zapupenec/rss-reader/maintainability)
 
-EN | [RU](https://github.com/zapupenec/frontend-project-11/blob/main/README-ru.md)
+EN | [RU](https://github.com/zapupenec/rss-reader/blob/main/README-ru.md)
 
-# [RSS reader](https://frontend-project-11-zapupenec.vercel.app)
+# [RSS reader](https://rss-reader-zapupenec.vercel.app)
 A service for aggregating RSS feeds, with which it is convenient to read a variety of sources, such as blogs. It allows you to add an unlimited number of RSS feeds, updates them itself and adds new entries to the general feed.
 ![screenshot-ru](/image/RSS_reader-ru.png)
 
